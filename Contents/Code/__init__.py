@@ -1,5 +1,5 @@
 TITLE = 'Kijk'
-API_BASE_URL = 'http://apps-api.uitzendinggemist.nl'
+API_BASE_URL = 'http://api.kijk.nl/v1/default/sections'
 EPISODE_URL = 'http://www.npo.nl/redirect/00-00-0000/%s'
 DAY = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']
 MONTH = ['', 'januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
@@ -163,15 +163,15 @@ def AZ():
 
 	oc = ObjectContainer(title2='Programma\'s A-Z')
 
-	json_obj = JSON.ObjectFromURL('%s/series.json' % (API_BASE_URL))
+	json_obj = JSON.ObjectFromURL('%s/programs-abc-0123456789abcdefghijklmnopqrstuvwxyz?limit=1500&offset=0' % (API_BASE_URL))
 
-	for programme in json_obj:
+	for programme in json_obj['items']:
 
 		oc.add(DirectoryObject(
-			key = Callback(Series, series_id=programme['mid']),
-			title = programme['name'],
-			summary = programme['description'],
-			thumb = Resource.ContentsOfURLWithFallback(programme['image'])
+			key = programme['id'],
+			title = programme['title'],
+			summary = programme['synopsis'],
+			thumb = Resource.ContentsOfURLWithFallback(programme['images']['retina_image'])
 		))
 
 	return oc
