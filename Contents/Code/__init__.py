@@ -32,7 +32,7 @@ def Overview(title, path):
 	json_obj = JSON.ObjectFromURL('%s/%s' % (API_BASE_URL, path))
 	episodes = []
 
-	for video in json_obj['items']':
+	for video in json_obj['items']:
 
 		title = 'video['title']
         summary = video['synopsis']
