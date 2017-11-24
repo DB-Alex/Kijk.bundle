@@ -174,7 +174,7 @@ def OnDemand():
 		date_object = Datetime.Now() - (delta * i)
 		title = '%s %s %s' % (DAY[date_object.weekday()], date_object.day, MONTH[date_object.month])
 
-		oc.add(DirectoryObject(key=Callback(Overview, title=title, path='/missed-all-%s?limit=250&offset=0' % (date_object.date())), title=title))
+		oc.add(DirectoryObject(key=Callback(Overview, title=title, path='/missed-all-%s?limit=250&offset=0' % (date_object.date().strftime('%Y%m%d')), title=title))
 
 	return oc
 
