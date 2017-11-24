@@ -34,7 +34,7 @@ def Overview(title, path):
 
 	for video in json_obj['items']:
 
-		title = 'video['title']
+		title = video['title']
         summary = video['synopsis']
         episode_id = video['id']
         slug = video['format']
