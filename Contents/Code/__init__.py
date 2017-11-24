@@ -17,8 +17,8 @@ def MainMenu():
 
 	oc = ObjectContainer()
 
-	oc.add(DirectoryObject(key=Callback(Overview, title='Populair', path='episodes/popular.json'), title='Populair'))
-	oc.add(DirectoryObject(key=Callback(Overview, title='Populair', path='episodes/popular.json'), title='Series'))
+	oc.add(DirectoryObject(key=Callback(Overview, title='Populair', path='popular_PopularVODs?offset=0'), title='Populair'))
+	oc.add(DirectoryObject(key=Callback(Overview, title='Series', path='episodes/popular.json'), title='Series'))
 	oc.add(DirectoryObject(key=Callback(AZ), title='Programma\'s A-Z'))
 	oc.add(DirectoryObject(key=Callback(OnDemand), title='Gemist'))
 
@@ -32,50 +32,25 @@ def Overview(title, path):
 	json_obj = JSON.ObjectFromURL('%s/%s' % (API_BASE_URL, path))
 	episodes = []
 
-	for video in json_obj:
+	for video in json_obj['items']':
 
-		if 'episodes/' in path: # Populair en Meest bekeken
+		title = 'video['title']
+        summary = video['synopsis']
+        episode_id = video['id']
+        slug = video['format']
+        channel = video['channel']
 
-			title = '%s - %s' % (video['series']['name'], video['name']) if video['name'] != "" else video['series']['name']
-			summary = video['description']
-			episode_id = video['mid']
+        thumbs = []
+        if video['images']: thumbs.append(video['images']['retina_image'])
+        #if 'stills' in video['episode'] and video['episode']['stills']: thumbs.append(video['episode']['stills'][0]['url'])
+        #if video['episode']['series']['image']: thumbs.append(video['episode']['series']['image'])
 
-			thumbs = []
-			if video['image']: thumbs.append(video['image'])
-			if 'stills' in video and video['stills']: thumbs.append(video['stills'][0]['url'])
-			if video['series']['image']: thumbs.append(video['series']['image'])
-
-			broadcasted_at = video['broadcasted_at']
-
-		elif 'broadcasts/' in path: # Gemist
-
-			title = '%s - %s' % (video['episode']['series']['name'], video['episode']['name']) if video['episode']['series']['name'].lower() not in video['episode']['name'].lower() else video['episode']['name']
-			title = title.strip(' -')
-			summary = video['episode']['description']
-			episode_id = video['episode']['mid']
-
-			thumbs = []
-			if video['episode']['image']: thumbs.append(video['episode']['image'])
-			if 'stills' in video['episode'] and video['episode']['stills']: thumbs.append(video['episode']['stills'][0]['url'])
-			if video['episode']['series']['image']: thumbs.append(video['episode']['series']['image'])
-
-			broadcasted_at = video['episode']['broadcasted_at']
-
-		else: # Kijktips
-
-			title = '%s - %s' % (video['episode']['series']['name'], video['name']) if video['episode']['series']['name'].lower() not in video['name'].lower() else video['name']
-			summary = video['description']
-			episode_id = video['episode']['mid']
-
-			thumbs = []
-			if video['episode']['image']: thumbs.append(video['episode']['image'])
-			if 'stills' in video['episode'] and video['episode']['stills']: thumbs.append(video['episode']['stills'][0]['url'])
-			if video['episode']['series']['image']: thumbs.append(video['episode']['series']['image'])
-
-			broadcasted_at = video['episode']['broadcasted_at']
+        broadcasted_at = video['date']
 
 		episodes.append({
 			'episode_id': episode_id,
+			'slug': slug,
+			'channel': channel,
 			'title': title,
 			'summary': summary,
 			'thumbs': thumbs,
@@ -87,7 +62,7 @@ def Overview(title, path):
 	for episode in episodes:
 
 		oc.add(DirectoryObject(
-			key = Callback(Episode, episode_id=episode['episode_id']),
+			key = Callback(Episode, (slug=episode['slug'], channel=episode['channel'], episode_id=episode['episode_id'])),
 			title = episode['title'],
 			summary = episode['summary'],
 			thumb = Resource.ContentsOfURLWithFallback(episode['thumbs'])
@@ -96,12 +71,12 @@ def Overview(title, path):
 	return oc
 
 ####################################################################################################
-@route('/video/kijk/episode/{episode_id}')
-def Episode(episode_id):
+@route('/video/kijk/episode/{slug}/{channel}/{episode_id}')
+def Episode(slug, channel, episode_id):
 
-	video = JSON.ObjectFromURL('%s/episodes/%s.json' % (API_BASE_URL, episode_id))
+	video = JSON.ObjectFromURL('https://api.kijk.nl/v1/default/pages/series-%s.%s-episode-%s' % (slug, channel, episode_id))
 
-	oc = ObjectContainer(title2=video['series']['name'])
+	oc = ObjectContainer(title2=video['title'])
 
 	airdate = Datetime.FromTimestamp(video['broadcasted_at'])
 	title = video['name'] if video['name'] else video['series']['name']
@@ -109,8 +84,8 @@ def Episode(episode_id):
 
 	thumbs = []
 	if video['image']: thumbs.append(video['image'])
-	if 'stills' in video and video['stills']: thumbs.append(video['stills'][0]['url'])
-	if video['series']['image']: thumbs.append(video['series']['image'])
+	#if 'stills' in video and video['stills']: thumbs.append(video['stills'][0]['url'])
+	#if video['series']['image']: thumbs.append(video['series']['image'])
 
 	oc.add(VideoClipObject(
 		url = EPISODE_URL % (video['mid']),
@@ -121,10 +96,10 @@ def Episode(episode_id):
 		thumb = Resource.ContentsOfURLWithFallback(thumbs)
 	))
 
-	oc.add(DirectoryObject(
-		key = Callback(Series, series_id=video['series']['id']),
-		title = 'Alle afleveringen'
-	))
+	#oc.add(DirectoryObject(
+	#	key = Callback(Series, series_id=video['series']['id']),
+	#	title = 'Alle afleveringen'
+	#))
 
 	return oc
 
@@ -164,17 +139,18 @@ def OnDemand():
 
 	oc = ObjectContainer(title2='Gemist')
 	delta = Datetime.Delta(days=1)
-	yesterday = (Datetime.Now() - delta).date()
+	today = Datetime.Now()
+	yesterday = (Datetime.Now() - delta)
 
-	oc.add(DirectoryObject(key=Callback(Overview, title='Laatst toegevoegd', path='broadcasts/recent.json'), title='Laatst toegevoegd'))
-	oc.add(DirectoryObject(key=Callback(Overview, title='Gisteren', path='broadcasts/%s.json' % (yesterday)), title='Gisteren'))
+	oc.add(DirectoryObject(key=Callback(Overview, title='Laatst toegevoegd', path='missed-all-%s?limit=250&offset=0' % (today.strftime('%Y%m%d'))), title='Laatst toegevoegd'))
+	oc.add(DirectoryObject(key=Callback(Overview, title='Gisteren', path='missed-all-%s?limit=250&offset=0' % (yesterday.strftime('%Y%m%d'))), title='Gisteren'))
 
 	for i in range(2, 10):
 
 		date_object = Datetime.Now() - (delta * i)
 		title = '%s %s %s' % (DAY[date_object.weekday()], date_object.day, MONTH[date_object.month])
 
-		oc.add(DirectoryObject(key=Callback(Overview, title=title, path='/missed-all-%s?limit=250&offset=0' % (date_object.strftime('%Y%m%d')), title=title))
+		oc.add(DirectoryObject(key=Callback(Overview, title=title, path='/missed-all-%s?limit=250&offset=0' % (date_object.strftime('%Y%m%d'))), title=title))
 
 	return oc
 
