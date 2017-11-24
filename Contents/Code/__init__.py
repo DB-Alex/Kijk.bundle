@@ -42,8 +42,6 @@ def Overview(title, path):
 
         thumbs = []
         if video['images']: thumbs.append(video['images']['retina_image'])
-        #if 'stills' in video['episode'] and video['episode']['stills']: thumbs.append(video['episode']['stills'][0]['url'])
-        #if video['episode']['series']['image']: thumbs.append(video['episode']['series']['image'])
 
         broadcasted_at = video['date']
 
@@ -78,20 +76,18 @@ def Episode(slug, channel, episode_id):
 
 	oc = ObjectContainer(title2=video['title'])
 
-	airdate = Datetime.FromTimestamp(video['broadcasted_at'])
-	title = video['name'] if video['name'] else video['series']['name']
-	title = '%s (%s %s %s)' % (title, airdate.day, MONTH[airdate.month], airdate.year)
+	airdate = Datetime.FromTimestamp(video['sections'][0]['items'][0]['date'])
+	title = video['sections'][0]['items'][0]['title']
+	#title = '%s (%s %s %s)' % (title, airdate.day, MONTH[airdate.month], airdate.year)
 
 	thumbs = []
-	if video['image']: thumbs.append(video['image'])
-	#if 'stills' in video and video['stills']: thumbs.append(video['stills'][0]['url'])
-	#if video['series']['image']: thumbs.append(video['series']['image'])
+	if video['sections'][0]['items'][0]['images']: thumbs.append(video['sections'][0]['items'][0]['images']['retina_image')
 
 	oc.add(VideoClipObject(
-		url = EPISODE_URL % (video['mid']),
+		url = EPISODE_URL % (video['sections'][0]['items'][0]['id']),
 		title = title,
-		summary = video['description'],
-		duration = video['duration'] * 1000,
+		summary = video['sections'][0]['items'][0]['synopsis'],
+		duration = video['sections'][0]['items'][0]['durationSeconds'] * 60,
 		originally_available_at = airdate.date(),
 		thumb = Resource.ContentsOfURLWithFallback(thumbs)
 	))
