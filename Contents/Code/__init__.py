@@ -62,7 +62,7 @@ def Overview(title, path):
 	for episode in episodes:
 
 		oc.add(DirectoryObject(
-			key = Callback(Episode, (slug=episode['slug'], channel=episode['channel'], episode_id=episode['episode_id'])),
+			key = Callback(Episode, slug=episode['slug'], channel=episode['channel'], episode_id=episode['episode_id']),
 			title = episode['title'],
 			summary = episode['summary'],
 			thumb = Resource.ContentsOfURLWithFallback(episode['thumbs'])
