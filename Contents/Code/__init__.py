@@ -17,9 +17,10 @@ def MainMenu():
 
 	oc = ObjectContainer()
 
-	oc.add(DirectoryObject(key=Callback(AZ), title='Programma\'s A-Z'))
 	oc.add(DirectoryObject(key=Callback(Overview, title='Populair', path='episodes/popular.json'), title='Populair'))
 	oc.add(DirectoryObject(key=Callback(Overview, title='Populair', path='episodes/popular.json'), title='Series'))
+	oc.add(DirectoryObject(key=Callback(AZ), title='Programma\'s A-Z'))
+	oc.add(DirectoryObject(key=Callback(OnDemand), title='Gemist'))
 
 	return oc
 
@@ -158,12 +159,32 @@ def Series(series_id):
 	return oc
 
 ####################################################################################################
+@route('/video/kijk/ondemand')
+def OnDemand():
+
+	oc = ObjectContainer(title2='Gemist')
+	delta = Datetime.Delta(days=1)
+	yesterday = (Datetime.Now() - delta).date()
+
+	oc.add(DirectoryObject(key=Callback(Overview, title='Laatst toegevoegd', path='broadcasts/recent.json'), title='Laatst toegevoegd'))
+	oc.add(DirectoryObject(key=Callback(Overview, title='Gisteren', path='broadcasts/%s.json' % (yesterday)), title='Gisteren'))
+
+	for i in range(2, 10):
+
+		date_object = Datetime.Now() - (delta * i)
+		title = '%s %s %s' % (DAY[date_object.weekday()], date_object.day, MONTH[date_object.month])
+
+		oc.add(DirectoryObject(key=Callback(Overview, title=title, path='/missed-all-%s?limit=250&offset=0' % (date_object.date())), title=title))
+
+	return oc
+
+####################################################################################################
 @route('/video/kijk/az')
 def AZ():
 
 	oc = ObjectContainer(title2='Programma\'s A-Z')
 
-	json_obj = JSON.ObjectFromURL('%s/programs-abc-0123456789abcdefghijklmnopqrstuvwxyz?limit=1500&offset=0' % (API_BASE_URL))
+	json_obj = JSON.ObjectFromURL('%s/programs-abc-0123456789abcdefghijklmnopqrstuvwxyz?limit=500&offset=0' % (API_BASE_URL))
 
 	for programme in json_obj['items']:
 
