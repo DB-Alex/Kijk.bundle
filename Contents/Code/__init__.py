@@ -1,6 +1,6 @@
 TITLE = 'Kijk'
 API_BASE_URL = 'http://api.kijk.nl/v1/default/sections'
-EPISODE_URL = 'http://www.npo.nl/redirect/00-00-0000/%s'
+EPISODE_URL = 'https://embed.kijk.nl/video/%s'
 DAY = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag']
 MONTH = ['', 'januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
 
@@ -17,10 +17,54 @@ def MainMenu():
 
 	oc = ObjectContainer()
 
-	oc.add(DirectoryObject(key=Callback(Overview, title='Populair', path='popular_PopularVODs?offset=0'), title='Populair'))
+	oc.add(DirectoryObject(key=Callback(Popular, title='Populair'), title='Populair'))
 	oc.add(DirectoryObject(key=Callback(Overview, title='Series', path='episodes/popular.json'), title='Series'))
 	oc.add(DirectoryObject(key=Callback(AZ), title='Programma\'s A-Z'))
 	oc.add(DirectoryObject(key=Callback(OnDemand), title='Gemist'))
+
+	return oc
+
+####################################################################################################
+@route('/video/kijk/popular')
+def Popular(title):
+
+	oc = ObjectContainer(title2=title)
+	json_obj = JSON.ObjectFromURL('%s/popular_PopularVODs?offset=0' % (API_BASE_URL))
+	episodes = []
+
+	for video in json_obj['sections']['items']:
+
+		title = video['title']
+        summary = video['synopsis']
+        episode_id = video['id']
+        slug = video['format']
+        channel = video['channel']
+
+        thumbs = []
+        if video['images']: thumbs.append(video['images']['retina_image'])
+
+        broadcasted_at = video['date']
+
+		episodes.append({
+			'episode_id': episode_id,
+			'slug': slug,
+			'channel': channel,
+			'title': title,
+			'summary': summary,
+			'thumbs': thumbs,
+			'broadcasted_at': broadcasted_at
+		})
+
+	episodes = sorted(episodes, key=lambda k: k['broadcasted_at'], reverse=True)
+
+	for episode in episodes:
+
+		oc.add(DirectoryObject(
+			key = Callback(Episode, slug=episode['slug'], channel=episode['channel'], episode_id=episode['episode_id']),
+			title = episode['title'],
+			summary = episode['summary'],
+			thumb = Resource.ContentsOfURLWithFallback(episode['thumbs'])
+		))
 
 	return oc
 
@@ -76,19 +120,19 @@ def Episode(slug, channel, episode_id):
 
 	oc = ObjectContainer(title2=video['title'])
 
-	airdate = Datetime.FromTimestamp(video['sections'][0]['items'][0]['date'])
+	#airdate = Datetime.FromTimestamp(video['sections'][0]['items'][0]['date'])
 	title = video['sections'][0]['items'][0]['title']
 	#title = '%s (%s %s %s)' % (title, airdate.day, MONTH[airdate.month], airdate.year)
 
 	thumbs = []
-	if video['sections'][0]['items'][0]['images']: thumbs.append(video['sections'][0]['items'][0]['images']['retina_image')
+	if video['sections'][0]['items'][0]['images']: thumbs.append(video['sections'][0]['items'][0]['images']['retina_image'])
 
 	oc.add(VideoClipObject(
 		url = EPISODE_URL % (video['sections'][0]['items'][0]['id']),
 		title = title,
 		summary = video['sections'][0]['items'][0]['synopsis'],
-		duration = video['sections'][0]['items'][0]['durationSeconds'] * 60,
-		originally_available_at = airdate.date(),
+		#duration = video['sections'][0]['items'][0]['durationSeconds'] * 60,
+		#originally_available_at = airdate.date(),
 		thumb = Resource.ContentsOfURLWithFallback(thumbs)
 	))
 
