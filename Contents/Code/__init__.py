@@ -99,7 +99,7 @@ def AZ():
 	for programme in json_obj['items']:
 
 		oc.add(DirectoryObject(
-			key = Callback(Series, series_id=programme['mid']),
+			key = Callback(Series, serie_id=programme['id']),
 			title = programme['title'],
 			summary = programme['synopsis'],
 			thumb = Resource.ContentsOfURLWithFallback(programme['images']['retina_image'])
@@ -152,10 +152,10 @@ def Overview(title, path):
 	return oc
 
 ####################################################################################################
-@route('/video/kijk/series/{slug}/{channel}')
-def Series(slug, channel):
+@route('/video/kijk/series/{serie_id}')
+def Series(serie_id):
 
-	json_obj = JSON.ObjectFromURL('https://api.kijk.nl/v1/default/pages/series-%s.%s' % (slug, channel))
+	json_obj = JSON.ObjectFromURL('https://api.kijk.nl/v1/default/pages/series-%s' % (serie_id))
 
 	oc = ObjectContainer(title2=json_obj['sections'][1]['items'][0]['title'])
 
